@@ -1,11 +1,11 @@
 import subprocess as sps
 import webbrowser as wbr
 
-import eel.chrome as chm
-import eel.electron as ele
-import eel.edge as edge
-#import eel.firefox as ffx      TODO
-#import eel.safari as saf       TODO
+import async_eel.chrome as chm
+import async_eel.electron as ele
+import async_eel.edge as edge
+#import async_eel.firefox as ffx      TODO
+#import async_eel.safari as saf       TODO
 
 _browser_paths = {}
 _browser_modules = {'chrome':   chm,
@@ -41,7 +41,7 @@ def _build_urls(start_pages, options):
 def open(start_pages, options):
     # Build full URLs for starting pages (including host and port)
     start_urls = _build_urls(start_pages, options)
-    
+
     mode = options.get('mode')
     if mode in [None, False]:
         # Don't open a browser

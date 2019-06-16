@@ -44,7 +44,7 @@ For some reason many of the best-in-class number crunching and maths libraries a
 Install from pypi with `pip`:
 
 ```shell
-pip install eel
+pip install async-eel
 ```
 
 ## Usage

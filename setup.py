@@ -6,9 +6,9 @@ setup(
     version='1.0-b1',
     author='Chris Knott',
     author_email='chrisknott@hotmail.co.uk',
-    packages=['eel'],
+    packages=['async_eel'],
     package_data={
-        'eel': ['eel.js'],
+        'async_eel': ['eel.js'],
     },
     install_requires=['bottle', 'bottle-websocket', 'future', 'whichcraft'],
     python_requires='>=2.6',

@@ -8,7 +8,7 @@ import bottle as btl
 import bottle.ext.websocket as wbs
 import re as rgx
 import os
-import eel.browsers as brw
+import async_eel.browsers as brw
 import random as rnd
 import sys
 import pkg_resources as pkg
@@ -49,7 +49,7 @@ api_error_message = '''
   To suppress this error, add 'suppress_error=True' to start() call.
   This option will be removed in future versions
 ----------------------------------------------------------------------------------
-''' 
+'''
 # ===============================================================================================
 
 # Public functions
@@ -72,7 +72,7 @@ def expose(name_or_function=None):
         return function
 
 
-def init(path, allowed_extensions=['.js', '.html', '.txt', '.htm', 
+def init(path, allowed_extensions=['.js', '.html', '.txt', '.htm',
                                    '.xhtml', '.vue']):
     global root_path, _js_functions
     root_path = _get_real_path(path)
@@ -113,7 +113,7 @@ def start(*start_urls, **kwargs):
         if _start_args['suppress_error']:
             _start_args.update(kwargs['options'])
         else:
-            raise RuntimeError(api_error_message)        
+            raise RuntimeError(api_error_message)
 
     if _start_args['port'] == 0:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -124,12 +124,12 @@ def start(*start_urls, **kwargs):
     if _start_args['jinja_templates'] != None:
         from jinja2 import Environment, FileSystemLoader, select_autoescape
         templates_path = os.path.join(root_path, _start_args['jinja_templates'])
-        _start_args['jinja_env'] = Environment(loader=FileSystemLoader(templates_path), 
-                                               autoescape=select_autoescape(['html', 'xml'])) 
+        _start_args['jinja_env'] = Environment(loader=FileSystemLoader(templates_path),
+                                               autoescape=select_autoescape(['html', 'xml']))
 
     # Launch the browser to the starting URLs
     show(*start_urls)
-    
+
     def run_lambda():
         if _start_args['all_interfaces'] == True:
             HOST = '0.0.0.0'
@@ -163,7 +163,7 @@ def spawn(function, *args, **kwargs):
 
 @btl.route('/eel.js')
 def _eel():
-    start_geometry = {'default': {'size': _start_args['size'], 
+    start_geometry = {'default': {'size': _start_args['size'],
                                   'position': _start_args['position']},
                       'pages':   _start_args['geometry']}
 
@@ -185,12 +185,12 @@ def _static(path):
             return template.render()
 
     return btl.static_file(path, root=root_path)
-    
+
 
 @btl.get('/eel', apply=[wbs.websocket])
 def _websocket(ws):
     global _websockets
-    
+
     for js_function in _js_functions:
         _import_js_function(js_function)
 
@@ -232,7 +232,7 @@ def _process_message(message, ws):
     if 'call' in message:
         return_val = _exposed_functions[message['name']](*message['args'])
         _repeated_send(ws, _safe_json({ 'return': message['call'],
-                                        'value': return_val  })) 
+                                        'value': return_val  }))
     elif 'return' in message:
         call_id = message['return']
         if call_id in _call_return_callbacks:
