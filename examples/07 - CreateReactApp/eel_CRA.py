@@ -4,18 +4,22 @@ import os
 import platform
 import random
 import sys
-
+import asyncio
 import async_eel
+
+
+loop = asyncio.get_event_loop()
+
 
 # Use latest version of Eel from parent directory
 sys.path.insert(1, '../../')
 
 
 @async_eel.expose  # Expose function to JavaScript
-def say_hello_py(x):
+async def say_hello_py(x):
     """Print message from JavaScript on app initialization, then call a JS function."""
     print('Hello from %s' % x)  # noqa T001
-    async_eel.say_hello_js('Python {from within say_hello_py()}!')
+    await async_eel.say_hello_js('Python {from within say_hello_py()}!')
 
 
 @async_eel.expose
@@ -37,7 +41,7 @@ def pick_file(folder):
         return '{} is not a valid folder'.format(folder)
 
 
-def start_eel(develop):
+async def start_eel(develop):
     """Start Eel with either production or development configuration."""
 
     if develop:
@@ -51,9 +55,13 @@ def start_eel(develop):
 
     async_eel.init(directory, ['.tsx', '.ts', '.jsx', '.js', '.html'])
 
-    # These will be queued until the first connection is made, but won't be repeated on a page reload
-    say_hello_py('Python World!')
-    async_eel.say_hello_js('Python World!')   # Call a JavaScript function (must be after `eel.init()`)
+    try:
+        # These will be queued until the first connection is made, but won't be repeated on a page reload
+        await say_hello_py('Python World!')
+        await async_eel.say_hello_js('Python World!')   # Call a JavaScript function (must be after `eel.init()`)
+    except Exception:
+        import traceback
+        traceback.print_exc()
 
     eel_kwargs = dict(
         host='localhost',
@@ -61,11 +69,11 @@ def start_eel(develop):
         size=(1280, 800),
     )
     try:
-        async_eel.start(page, mode=app, **eel_kwargs)
+        await async_eel.start(page, mode=app, **eel_kwargs)
     except EnvironmentError:
         # If Chrome isn't found, fallback to Microsoft Edge on Win10 or greater
         if sys.platform in ['win32', 'win64'] and int(platform.release()) >= 10:
-            async_eel.start(page, mode='edge', **eel_kwargs)
+            await async_eel.start(page, mode='edge', **eel_kwargs)
         else:
             raise
 
@@ -74,4 +82,6 @@ if __name__ == '__main__':
     import sys
 
     # Pass any second argument to enable debugging
-    start_eel(develop=len(sys.argv) == 2)
+    asyncio.run_coroutine_threadsafe(start_eel(develop=len(sys.argv) == 2), loop)
+    loop.run_forever()
+
