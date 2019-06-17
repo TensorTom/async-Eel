@@ -12,9 +12,15 @@ def handleinput(x):
 
 
 async def main():
-    async_eel.init('web')                     # Give folder containing web files
-    await async_eel.start('main.html', size=(500, 250))    # Start
-    await async_eel.say_hello_js('connected!')   # Call a Javascript function
+    try:
+        async_eel.init('web')                     # Give folder containing web files
+        await async_eel.start('main.html', size=(500, 250))    # Start
+
+        await async_eel.say_hello_js('connected!')()   # Call a Javascript function
+        print("OK")
+    except Exception:
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == '__main__':

@@ -23,12 +23,10 @@ async def main():
         await async_eel.start('callbacks.html', size=(400, 300))
 
         # Call Javascript function, and pass explicit callback function
-        future = await async_eel.js_random()
-        await future(print_num)
+        await async_eel.js_random()(print_num)
 
         # Do the same with an inline callback
-        future = await async_eel.js_random()
-        await future(lambda n: print('2Got this from Javascript:', n))
+        await async_eel.js_random()(lambda n: print('2Got this from Javascript:', n))
     except Exception:
         import traceback
         traceback.print_exc()

@@ -17,7 +17,8 @@ async def main():
         await async_eel.start('templates/hello.html', size=(300, 200), jinja_templates='templates')    # Start
 
         say_hello_py('Python World!')
-        await async_eel.say_hello_js('Python World!')  # Call a Javascript function
+        r = await async_eel.say_hello_js('Python World!')()  # Call a Javascript function
+        print("main OK", r)
     except Exception:
         import traceback
         traceback.print_exc()

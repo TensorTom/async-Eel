@@ -24,7 +24,7 @@ async def main():
         # await eel.start('hello.html', mode='custom', cmdline_args=['node_modules/electron/dist/electron.exe', '.'])
 
         say_hello_py('Python World!')
-        await async_eel.say_hello_js('Python World!')  # Call a Javascript function
+        async_eel.say_hello_js('Python World!')  # Call a Javascript function
     except Exception:
         import traceback
         traceback.print_exc()

@@ -12,7 +12,8 @@ import sys
 import pkg_resources as pkg
 import socket
 import asyncio
-from typing import Optional, Callable, Awaitable
+from expiringdict import ExpiringDict
+from typing import Optional, Callable, Dict
 from aiohttp.web_ws import WebSocketResponse
 from aiohttp.web import BaseRequest
 from aiohttp import web
@@ -28,8 +29,7 @@ loop = asyncio.get_event_loop()
 _eel_js_file = pkg.resource_filename('eel', 'eel.js')
 _eel_js = open(_eel_js_file, encoding='utf-8').read()
 _websockets = []
-_call_return_values = {}
-_call_return_callbacks = {}
+_call_return_futures: Dict[int, asyncio.Future] = ExpiringDict(max_len=5000, max_age_seconds=300)
 _call_number = 0
 _exposed_functions = {}
 _js_functions = []
@@ -163,6 +163,7 @@ def show(*start_urls):
 
 
 def spawn(function, *args, **kwargs):
+    assert asyncio.iscoroutinefunction(function)
     asyncio.run_coroutine_threadsafe(function(*args, **kwargs), loop)
 
 # Bottle Routes
@@ -262,14 +263,10 @@ async def _process_message(message, ws: WebSocketResponse):
         }))
     elif 'return' in message:
         call_id = message['return']
-        if call_id in _call_return_callbacks:
-            callback = _call_return_callbacks.pop(call_id)
-            if asyncio.iscoroutinefunction(callback):
-                await callback(message['value'])
-            else:
-                callback(message['value'])
-        else:
-            _call_return_values[call_id] = message['value']
+        if call_id in _call_return_futures:
+            future = _call_return_futures[call_id]
+            if not future.done():
+                future.set_result(message['value'])
     else:
         print('Invalid message received: ', message)
 
@@ -302,32 +299,40 @@ def _call_object(name, args):
     return {'call': call_id, 'name': name, 'args': args}
 
 
-async def _mock_call(name, args):
+def _mock_call(name, args):
     call_object = _call_object(name, args)
     global _mock_queue
     _mock_queue += [call_object]
-    return _call_return(call_object)
+    return _call_return(call_object['call'])
 
 
-async def _js_call(name, args):
+def _js_call(name, args):
     call_object = _call_object(name, args)
     data = _safe_json(call_object)
     for _, ws in _websockets:
-        await _repeated_send(ws, data)
-    return _call_return(call_object)
+        loop.create_task(_repeated_send(ws, data))
+    return _call_return(call_object['call'])
 
 
-def _call_return(call):
-    call_id = call['call']
+def _call_return(call_id):
+    future = asyncio.Future()
+    _call_return_futures[call_id] = future
+
+    async def wait_for_result(callback):
+        await future
+        args = future.result()
+        if asyncio.iscoroutinefunction(callback):
+            await callback(args)
+        else:
+            callback(args)
 
     async def return_func(callback=None):
-        if callback is not None:
-            _call_return_callbacks[call_id] = callback
+        """return data or task object"""
+        if callback is None:
+            await future
+            return future.result()
         else:
-            for w in range(10000):
-                if call_id in _call_return_values:
-                    return _call_return_values.pop(call_id)
-                await asyncio.sleep(0.001)
+            return loop.create_task(wait_for_result(callback))
     return return_func
 
 

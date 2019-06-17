@@ -16,7 +16,8 @@ async def main():
     await async_eel.start('hello.html', size=(300, 200))    # Start
 
     await say_hello_py('Python World!')
-    await async_eel.say_hello_js('Python World!')  # Call a Javascript function
+    await async_eel.say_hello_js('Python World!')()  # Call a Javascript function
+    print("OK")
 
 
 if __name__ == '__main__':

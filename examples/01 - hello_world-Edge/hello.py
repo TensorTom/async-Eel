@@ -22,9 +22,6 @@ async def main():
     # Set web files folder and optionally specify which file types to check for eel.expose()
     async_eel.init('web', allowed_extensions=['.js', '.html'])
 
-    await say_hello_py('Python World!')
-    await async_eel.say_hello_js('Python World!')  # Call a Javascript function
-
     # Launch example in Microsoft Edge only on Windows 10 and above
     if sys.platform in ['win32', 'win64'] and int(platform.release()) >= 10:
         await async_eel.start('hello.html', mode='edge')
@@ -40,6 +37,10 @@ async def main():
     #         await async_eel.start('hello.html', mode='edge')
     #     else:
     #         raise
+
+    await say_hello_py('Python World!')
+    await async_eel.say_hello_js('Python World!')()  # Call a Javascript function
+    print("OK")
 
 
 if __name__ == '__main__':

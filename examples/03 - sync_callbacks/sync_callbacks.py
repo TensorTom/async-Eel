@@ -18,8 +18,7 @@ async def main():
     # Get result returned synchronously by
     # passing nothing in second brackets
     #                       v
-    future = await async_eel.js_random()
-    data = await future()
+    data = await async_eel.js_random()()
     print('Got this from Javascript:', data)
 
 

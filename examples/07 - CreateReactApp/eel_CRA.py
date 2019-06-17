@@ -58,7 +58,7 @@ async def start_eel(develop):
     try:
         # These will be queued until the first connection is made, but won't be repeated on a page reload
         await say_hello_py('Python World!')
-        await async_eel.say_hello_js('Python World!')   # Call a JavaScript function (must be after `eel.init()`)
+        async_eel.say_hello_js('Python World!')   # Call a JavaScript function (must be after `eel.init()`)
     except Exception:
         import traceback
         traceback.print_exc()
