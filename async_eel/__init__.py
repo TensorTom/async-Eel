@@ -319,20 +319,31 @@ def _call_return(call_id):
     _call_return_futures[call_id] = future
 
     async def wait_for_result(callback):
-        await future
-        args = future.result()
-        if asyncio.iscoroutinefunction(callback):
-            await callback(args)
-        else:
-            callback(args)
+        """wait for result and exc callback"""
+        try:
+            await asyncio.wait_for(future, timeout=10.0)
+            args = future.result()
+            if asyncio.iscoroutinefunction(callback):
+                await callback(args)
+            else:
+                callback(args)
+        except asyncio.TimeoutError:
+            log.debug("timeout on wait_for_result")
+        except Exception:
+            log.debug("_call_return exception", exc_info=True)
 
     async def return_func(callback=None):
         """return data or task object"""
-        if callback is None:
-            await future
-            return future.result()
-        else:
-            return loop.create_task(wait_for_result(callback))
+        try:
+            if callback is None:
+                await asyncio.wait_for(future, timeout=10.0)
+                return future.result()
+            else:
+                return loop.create_task(wait_for_result(callback))
+        except asyncio.TimeoutError:
+            log.debug("timeout on return_func")
+        except Exception:
+            log.debug("return_func exception", exc_info=True)
     return return_func
 
 
