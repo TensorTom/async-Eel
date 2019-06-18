@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='async-Eel',
-    version='1.0-b1',
+    version='1.0-b2',
     author='namuyang',
     author_email='thhjuu<AT>yahoo.co.jp',
     packages=['async_eel'],
