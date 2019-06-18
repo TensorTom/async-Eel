@@ -227,8 +227,11 @@ async def _static(request: BaseRequest):
                 template = _start_args['jinja_env'].get_template(path[n:])
                 return web.Response(body=template.render(), content_type='text/html')
 
-        log.debug(f"static access to {path}")
-        return web.FileResponse(path=os.path.join(root_path, path))
+        file_path = os.path.join(root_path, path)
+        if not os.path.isfile(file_path):
+            return web.Response(text=f"not found {path}", status=404)
+        log.debug(f"static access to '{path}'")
+        return web.FileResponse(path=file_path)
     except Exception as e:
         log.debug("http page exception", exc_info=True)
         return web.Response(text=str(e), status=500)
