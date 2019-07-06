@@ -164,7 +164,7 @@ def show(*start_urls):
 
 def spawn(function, *args, **kwargs):
     assert asyncio.iscoroutinefunction(function)
-    asyncio.run_coroutine_threadsafe(function(*args, **kwargs), loop)
+    asyncio.ensure_future(function(*args, **kwargs))
 
 # Bottle Routes
 
@@ -271,7 +271,7 @@ async def _process_message(message, ws: WebSocketResponse):
             if not future.done():
                 future.set_result(message['value'])
     else:
-        print('Invalid message received: ', message)
+        log.warning('Invalid message received: ', message)
 
 
 def _get_real_path(path):
@@ -313,7 +313,7 @@ def _js_call(name, args):
     call_object = _call_object(name, args)
     data = _safe_json(call_object)
     for _, ws in _websockets:
-        loop.create_task(_repeated_send(ws, data))
+        asyncio.ensure_future(_repeated_send(ws, data))
     return _call_return(call_object['call'])
 
 
@@ -342,7 +342,7 @@ def _call_return(call_id):
                 await asyncio.wait_for(future, timeout=10.0)
                 return future.result()
             else:
-                return loop.create_task(wait_for_result(callback))
+                return asyncio.ensure_future(wait_for_result(callback))
         except asyncio.TimeoutError:
             log.debug("timeout on return_func")
         except Exception:
@@ -364,6 +364,5 @@ def _websocket_close(page):
         close_callback(page, web_sockets)
     else:
         # Default behaviour - wait 1s, then quit if all sockets are closed
-        sleep(1.0)
         if len(_websockets) == 0:
-            sys.exit()
+            loop.call_later(1.0, loop.stop)
