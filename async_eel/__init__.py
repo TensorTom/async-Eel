@@ -1,39 +1,38 @@
-from __future__ import print_function   # Python 2 compatibility stuff
-from builtins import range
-from io import open
-
-import json as jsn
-import re as rgx
-import os
 from async_eel.utils import *
-import async_eel.browsers as brw
-import random as rnd
-import sys
-import pkg_resources as pkg
-import socket
-import asyncio
-from expiringdict import ExpiringDict
-from typing import Optional, Callable, Dict
+from async_eel import browsers
 from aiohttp.web_ws import WebSocketResponse
 from aiohttp.web import BaseRequest
 from aiohttp import web
-from logging import getLogger
-from time import sleep
-import logging
+from expiringdict import ExpiringDict
+from typing import Optional, Callable, Dict
+from logging import getLogger, ERROR
+from random import random
+import pkg_resources
+import socket
+import asyncio
+import json
+import re
+import sys
+import os
 
 
-getLogger('aiohttp').setLevel(logging.ERROR)
+# logging
+getLogger('aiohttp').setLevel(ERROR)
 log = getLogger(__name__)
+
+# inner objects
 routes = web.RouteTableDef()
 loop = asyncio.get_event_loop()
-_eel_js_file = pkg.resource_filename('eel', 'eel.js')
+
+# inner vars
+_eel_js_file = pkg_resources.resource_filename('eel', 'eel.js')
 _eel_js = open(_eel_js_file, encoding='utf-8').read()
-_websockets = []
+_websockets = list()
 _call_return_futures: Dict[int, asyncio.Future] = ExpiringDict(max_len=5000, max_age_seconds=300)
 _call_number = 0
-_exposed_functions = {}
-_js_functions = []
-_mock_queue = []
+_exposed_functions = dict()
+_js_functions = list()
+_mock_queue = list()
 _mock_queue_done = set()
 
 # All start() options must provide a default value and explanation here
@@ -99,15 +98,15 @@ def init(path, allowed_extensions=('.js', '.html', '.txt', '.htm', '.xhtml', '.v
                 with open(os.path.join(root, name), encoding='utf-8') as file:
                     contents = file.read()
                     expose_calls = set()
-                    finder = rgx.findall(r'eel\.expose\(([^\)]+)\)', contents)
+                    finder = re.findall(r'eel\.expose\(([^\)]+)\)', contents)
                     for expose_call in finder:
                         # If name specified in 2nd argument, strip quotes and store as function name
                         if ',' in expose_call:
-                            expose_call = rgx.sub(r'["\']', '', expose_call.split(',')[1])
+                            expose_call = re.sub(r'["\']', '', expose_call.split(',')[1])
                         expose_call = expose_call.strip()
                         # Verify that function name is valid
                         msg = "eel.expose() call contains '(' or '='"
-                        assert rgx.findall(r'[\(=]', expose_call) == [], msg
+                        assert re.findall(r'[\(=]', expose_call) == [], msg
                         expose_calls.add(expose_call)
                     js_functions.update(expose_calls)
             except UnicodeDecodeError:
@@ -160,7 +159,7 @@ async def start(*start_urls, **kwargs):
 
 
 def show(*start_urls):
-    brw.open(start_urls, _start_args)
+    browsers.open(start_urls, _start_args)
 
 
 def spawn(function, *args, **kwargs):
@@ -189,7 +188,6 @@ async def _eel(request: BaseRequest):
 
 @routes.get('/eel')
 async def _websocket(request: BaseRequest):
-    global _websockets
 
     ws = await websocket_protocol_check(request)
 
@@ -202,7 +200,7 @@ async def _websocket(request: BaseRequest):
             await _repeated_send(ws, _safe_json(call))
         _mock_queue_done.add(page)
 
-    _websockets += [(page, ws)]
+    _websockets.append((page, ws))
 
     while True:
         try:
@@ -246,7 +244,7 @@ async def _static(request: BaseRequest):
 
 
 def _safe_json(obj):
-    return jsn.dumps(obj, default=lambda o: None)
+    return json.dumps(obj, default=lambda o: None)
 
 
 async def _repeated_send(ws: WebSocketResponse, msg):
@@ -303,14 +301,13 @@ def _import_js_function(f):
 def _call_object(name, args):
     global _call_number
     _call_number += 1
-    call_id = _call_number + rnd.random()
+    call_id = _call_number + random()
     return {'call': call_id, 'name': name, 'args': args}
 
 
 def _mock_call(name, args):
     call_object = _call_object(name, args)
-    global _mock_queue
-    _mock_queue += [call_object]
+    _mock_queue.append(call_object)
     return _call_return(call_object['call'])
 
 
@@ -371,3 +368,12 @@ def _websocket_close(page):
         # Default behaviour - wait 1s, then quit if all sockets are closed
         if _start_args['auto_close'] and len(_websockets) == 0:
             loop.call_later(1.0, loop.stop)
+
+
+__all__ = [
+    "expose",
+    "init",
+    "start",
+    "show",
+    "spawn",
+]
