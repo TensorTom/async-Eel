@@ -50,6 +50,7 @@ _start_args = {
     'close_callback':   None,                       # Callback for when all windows have closed
     'app_mode':  True,                              # (Chrome specific option)
     'all_interfaces': False,                        # Allow bottle server to listen for connections on all interfaces
+    'auto_close': True,                             # Auto close process when websocket connection is zero
 }
 
 # == Temporary (suppressable) error message to inform users of breaking API change for v1.0.0 ===
@@ -163,8 +164,12 @@ def show(*start_urls):
 
 
 def spawn(function, *args, **kwargs):
-    assert asyncio.iscoroutinefunction(function)
-    asyncio.ensure_future(function(*args, **kwargs))
+    if asyncio.iscoroutinefunction(function):
+        asyncio.ensure_future(function(*args, **kwargs))
+    else:
+        if 0 < len(kwargs):
+            raise Exception('cannot convey kwargs')
+        loop.call_soon_threadsafe(function, *args)
 
 # Bottle Routes
 
@@ -364,5 +369,5 @@ def _websocket_close(page):
         close_callback(page, web_sockets)
     else:
         # Default behaviour - wait 1s, then quit if all sockets are closed
-        if len(_websockets) == 0:
+        if _start_args['auto_close'] and len(_websockets) == 0:
             loop.call_later(1.0, loop.stop)
