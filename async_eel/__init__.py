@@ -49,6 +49,7 @@ _start_args = {
     'close_callback':   None,                       # Callback for when all windows have closed
     'app_mode':  True,                              # (Chrome specific option)
     'all_interfaces': False,                        # Allow bottle server to listen for connections on all interfaces
+    'disable_cache': True,                          # Sets the no-store response header when serving assets
     'auto_close': True,                             # Auto close process when websocket connection is zero
 }
 
@@ -183,7 +184,10 @@ async def _eel(request: BaseRequest):
                            '_py_functions: %s,' % list(_exposed_functions.keys()))
     page = page.replace('/** _start_geometry **/',
                         '_start_geometry: %s,' % _safe_json(start_geometry))
-    return web.Response(text=page, content_type='application/javascript')
+
+    response = web.Response(text=page, content_type='application/javascript')
+    _set_response_headers(response)
+    return response
 
 
 @routes.get('/eel')
@@ -221,6 +225,7 @@ async def _websocket(request: BaseRequest):
 
 @routes.get('/{path:.*}')
 async def _static(request: BaseRequest):
+    response = None
     try:
         path = request.path[1:]
         if 'jinja_env' in _start_args and 'jinja_templates' in _start_args:
@@ -228,16 +233,19 @@ async def _static(request: BaseRequest):
             if path.startswith(template_prefix):
                 n = len(template_prefix)
                 template = _start_args['jinja_env'].get_template(path[n:])
-                return web.Response(body=template.render(), content_type='text/html')
-
-        file_path = os.path.join(root_path, path)
-        if not os.path.isfile(file_path):
-            return web.Response(text=f"not found {path}", status=404)
-        log.debug(f"static access to '{path}'")
-        return web.FileResponse(path=file_path)
+                response = web.Response(body=template.render(), content_type='text/html')
+        else:
+            file_path = os.path.join(root_path, path)
+            if not os.path.isfile(file_path):
+                return web.Response(text=f"not found {path}", status=404)
+            log.debug(f"static access to '{path}'")
+            response = web.FileResponse(path=file_path)
     except Exception as e:
         log.debug("http page exception", exc_info=True)
-        return web.Response(text=str(e), status=500)
+        response = web.Response(text=str(e), status=500)
+
+    _set_response_headers(response)
+    return response
 
 
 # Private functions
@@ -368,6 +376,12 @@ def _websocket_close(page):
         # Default behaviour - wait 1s, then quit if all sockets are closed
         if _start_args['auto_close'] and len(_websockets) == 0:
             loop.call_later(1.0, loop.stop)
+
+
+def _set_response_headers(response):
+    if _start_args['disable_cache']:
+        # https://stackoverflow.com/a/24748094/280852
+        response.headers.add('Cache-Control', 'no-store')
 
 
 __all__ = [
