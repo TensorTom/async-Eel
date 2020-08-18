@@ -5,7 +5,7 @@ with full access to Python capabilities and libraries.
 
 About
 ----
-* Python**3.6+**
+* Python**3.7+**
 * use `asyncio`
 * [original README.md](README-old.md)
 * [original repository](https://github.com/ChrisKnott/Eel)
