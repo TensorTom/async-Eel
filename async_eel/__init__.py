@@ -231,26 +231,25 @@ async def _static(request: BaseRequest):
     response = None
     try:
         path = request.path[1:]
-        print('Request path:', path)
+        log.debug('_static() request path: {path}')
         if 'jinja_env' in _start_args and 'jinja_templates' in _start_args:
             template_prefix = _start_args['jinja_templates'] + '/'
             if path.startswith(template_prefix):
-                print('Path starts with template prefix:', template_prefix)
+                log.debug(f'_static() path starts with template prefix: {template_prefix}')
                 n = len(template_prefix)
                 template = _start_args['jinja_env'].get_template(path[n:])
                 response = aiohttp_jinja2.render_template(template, request, {})
-                #response = web.Response(body=template.render(), content_type='text/html')
-        else:
+        if response is None:
             file_path = os.path.join(root_path, path)
             if not os.path.isfile(file_path):
                 return web.Response(text=f"not found {path}", status=404)
-            log.debug(f"static access to '{path}'")
+            log.debug(f"_static() access to '{path}'")
             response = web.FileResponse(path=file_path)
     except Exception as e:
         log.debug("http page exception", exc_info=True)
         response = web.Response(text=str(e), status=500)
-
-    _set_response_headers(response)
+    if response is not None:
+        _set_response_headers(response)
     return response
 
 
