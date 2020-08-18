@@ -14,6 +14,7 @@ import json
 import re
 import sys
 import os
+import aiohttp_jinja2
 
 
 # logging
@@ -145,12 +146,11 @@ async def start(*start_urls, **kwargs):
         app = web.Application()
         app.add_routes(routes)
         if _start_args['jinja_templates'] is not None:
-            #import aiohttp_jinja2
             from jinja2 import Environment, FileSystemLoader, select_autoescape
             templates_path = os.path.join(root_path, _start_args['jinja_templates'])
             _start_args['jinja_env'] = Environment(loader=FileSystemLoader(templates_path),
                                                    autoescape=select_autoescape(['html', 'xml']))
-            #aiohttp_jinja2.setup(app, loader=FileSystemLoader(templates_path))
+            aiohttp_jinja2.setup(app, loader=FileSystemLoader(templates_path))
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, host=HOST, port=_start_args['port'])
@@ -236,7 +236,8 @@ async def _static(request: BaseRequest):
                 print('Path starts with template prefix:', template_prefix)
                 n = len(template_prefix)
                 template = _start_args['jinja_env'].get_template(path[n:])
-                response = web.Response(body=template.render(), content_type='text/html')
+                response = aiohttp_jinja2.render_template(template, request)
+                #response = web.Response(body=template.render(), content_type='text/html')
         else:
             file_path = os.path.join(root_path, path)
             if not os.path.isfile(file_path):
