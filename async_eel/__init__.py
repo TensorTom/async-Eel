@@ -15,7 +15,7 @@ import re
 import sys
 import os
 import aiohttp_jinja2
-
+import mimetypes
 
 # logging
 getLogger('aiohttp').setLevel(ERROR)
@@ -26,6 +26,7 @@ routes = web.RouteTableDef()
 loop = asyncio.get_event_loop()
 
 # inner vars
+mimetypes.add_type('application/javascript', '.js')
 _eel_js_file = pkg_resources.resource_filename('eel', 'eel.js')
 _eel_js = open(_eel_js_file, encoding='utf-8').read()
 _websockets = list()
