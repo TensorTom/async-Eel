@@ -2,3 +2,4 @@ pkg-resources==0.0.0
 whichcraft==0.4.1
 aiohttp
 expiringdict
+aiohttp-jinja2
