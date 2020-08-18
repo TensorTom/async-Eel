@@ -236,7 +236,7 @@ async def _static(request: BaseRequest):
                 print('Path starts with template prefix:', template_prefix)
                 n = len(template_prefix)
                 template = _start_args['jinja_env'].get_template(path[n:])
-                response = aiohttp_jinja2.render_template(template, request)
+                response = aiohttp_jinja2.render_template(template, request, {})
                 #response = web.Response(body=template.render(), content_type='text/html')
         else:
             file_path = os.path.join(root_path, path)
