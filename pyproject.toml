@@ -6,7 +6,7 @@ authors = ["TensorTom <14287229+TensorTom@users.noreply.github.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 aiohttp = "^3.6.2"
 expiringdict = "^1.2.1"
 whichcraft = "^0.6.1"
