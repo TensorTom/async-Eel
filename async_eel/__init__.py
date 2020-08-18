@@ -87,7 +87,8 @@ def expose(name_or_function=None):
         return function
 
 
-def init(path, allowed_extensions=('.js', '.html', '.txt', '.htm', '.xhtml', '.vue')):
+def init(path, allowed_extensions=('.js', '.html', '.txt', '.htm',
+                                   '.xhtml', '.vue')):
     global root_path, _js_functions
     root_path = _get_real_path(path)
 
